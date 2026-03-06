@@ -1,9 +1,14 @@
 import React from "react";
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
+// Import Pages
 import Storefront from "./pages/Storefront";
-import Login from "./pages/Login"; // <-- IMPORT THIS
-import Register from "./pages/Register"; // <-- IMPORT THIS
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import CartPage from "./pages/CartPage"; // <-- IMPORT CART
+import Checkout from "./pages/Checkout"; // <-- IMPORT CHECKOUT
+
+// Import Providers & Layout
 import { Navbar } from "./components/layout/Navbar";
 import { CartProvider } from "./store/CartContext";
 
@@ -16,10 +21,12 @@ export default function App() {
           <main>
             <Routes>
               <Route path="/" element={<Storefront />} />
-              <Route path="/login" element={<Login />} />{" "}
-              {/* <-- ADD THIS ROUTE */}
-              <Route path="/register" element={<Register />} />{" "}
-              {/* <-- ADD THIS ROUTE */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/cart" element={<CartPage />} />{" "}
+              {/* <-- ADD CART ROUTE */}
+              <Route path="/checkout" element={<Checkout />} />{" "}
+              {/* <-- ADD CHECKOUT ROUTE */}
             </Routes>
           </main>
         </div>
