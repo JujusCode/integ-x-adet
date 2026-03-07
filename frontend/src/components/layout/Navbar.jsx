@@ -47,13 +47,12 @@ export function Navbar() {
             Sign In
           </Link>
 
-          <Link to="/cart" className="relative group">
-            <Button
-              variant="outline"
-              className="w-11 h-11 p-0 rounded-full border-white/10 bg-white/5"
-            >
-              <ShoppingCart className="w-5 h-5 group-hover:text-[#F7931A] transition-colors" />
-            </Button>
+          <Link
+            to="/cart"
+            className="relative group flex items-center justify-center w-11 h-11 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
+          >
+            <ShoppingCart className="w-5 h-5 group-hover:text-[#F7931A] transition-colors" />
+
             {/* Glowing Cart Counter Badge */}
             {cartItemCount > 0 && (
               <span className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-gradient-to-r from-[#EA580C] to-[#F7931A] text-[10px] font-bold text-white shadow-[0_0_10px_rgba(247,147,26,0.5)]">

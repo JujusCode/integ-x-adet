@@ -9,15 +9,27 @@ export function CartProvider({ children }) {
 
   // Add an item to the cart (or increase quantity if it already exists)
   const addToCart = (product) => {
+    // 1. Log the incoming data so we can see it in the Developer Console!
+    console.log("Attempting to add to cart:", product);
+
+    // 2. The Safety Net
+    if (!product || !product.id) {
+      console.error("CRITICAL: Invalid product passed to Cart!");
+      return;
+    }
+
+    // 3. The actual cart logic
     setCartItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === product.id);
       if (existingItem) {
+        console.log("Item exists! Increasing quantity.");
         return prevItems.map((item) =>
           item.id === product.id
             ? { ...item, quantity: item.quantity + 1 }
             : item,
         );
       }
+      console.log("New item! Adding to cart.");
       return [...prevItems, { ...product, quantity: 1 }];
     });
   };
