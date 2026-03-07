@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Navigate } from "react-router-dom"; // <-- ADDED Navigate here
 import { Shield, CreditCard, MapPin, CheckCircle } from "lucide-react";
 
 import { useCart } from "../store/CartContext";
@@ -15,14 +15,12 @@ import { Button } from "../components/ui/Button";
 export default function Checkout() {
   const { cartItems, clearCart } = useCart();
   const navigate = useNavigate();
-
-  // Basic routing guard: If cart is empty, kick them back to storefront
-  if (cartItems.length === 0) {
-    navigate("/");
-    return null;
-  }
-
   const [isProcessing, setIsProcessing] = useState(false);
+
+  // THE FIX: Use the <Navigate /> component to safely redirect during render!
+  if (cartItems.length === 0) {
+    return <Navigate to="/" replace />;
+  }
 
   const parsePrice = (priceStr) =>
     parseFloat(priceStr.replace(/[^0-9.-]+/g, ""));
@@ -36,10 +34,9 @@ export default function Checkout() {
     e.preventDefault();
     setIsProcessing(true);
 
-    // Simulate network delay for the API call to Django
+    // Simulate network delay
     setTimeout(() => {
       clearCart();
-      // We will create the success page next
       navigate("/success");
     }, 2000);
   };
@@ -59,7 +56,6 @@ export default function Checkout() {
       >
         {/* Left Column: Forms */}
         <div className="lg:col-span-2 space-y-8">
-          {/* Shipping Node Section */}
           <Card>
             <CardHeader className="border-b border-white/10 pb-4 flex flex-row items-center gap-2">
               <MapPin className="w-5 h-5 text-[#94A3B8]" />
@@ -105,7 +101,6 @@ export default function Checkout() {
             </CardContent>
           </Card>
 
-          {/* Payment Section */}
           <Card>
             <CardHeader className="border-b border-white/10 pb-4 flex flex-row items-center gap-2">
               <CreditCard className="w-5 h-5 text-[#94A3B8]" />
@@ -179,6 +174,7 @@ export default function Checkout() {
                   type="submit"
                   className="w-full gap-2"
                   disabled={isProcessing}
+                  onClick={() => navigate("/success")}
                 >
                   {isProcessing ? (
                     <span className="animate-pulse">Broadcasting...</span>
