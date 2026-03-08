@@ -2,14 +2,26 @@ import axios from "axios";
 
 const api = axios.create({
   baseURL: "http://localhost:8000/api/",
-  timeout: 10000,
   headers: {
     "Content-Type": "application/json",
-    Accept: "application/json",
   },
 });
 
-// We will add interceptors here later to automatically attach JWT tokens
-// when the user logs in, ensuring secure communication with Django.
+// THE INTERCEPTOR: Automatically attach the JWT token if it exists
+api.interceptors.request.use(
+  (config) => {
+    // Look inside the browser's local storage for the wristband
+    const token = localStorage.getItem("access_token");
+
+    // If we have one, attach it to the Authorization header
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  },
+);
 
 export default api;

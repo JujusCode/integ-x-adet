@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
 import { ShieldCheck, Mail, Key, ArrowRight } from "lucide-react";
 
 import {
@@ -12,10 +11,16 @@ import {
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
+import { useAuth } from "../store/AuthContext"; // <-- Import the hook
+import { Link, useNavigate } from "react-router-dom"; // <-- Add useNavigate
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [errorMsg, setErrorMsg] = useState(""); // State for showing errors
+
+  const { login } = useAuth();
+  const navigate = useNavigate();
 
   const gridBackgroundStyle = {
     backgroundSize: "50px 50px",
@@ -26,10 +31,18 @@ export default function Login() {
     maskImage: "radial-gradient(circle at center, black 60%, transparent 100%)",
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // We will connect this to Django later
-    console.log("Login attempt:", { email, password });
+    setErrorMsg(""); // Clear old errors
+
+    // Call our new login function
+    const result = await login(email, password);
+
+    if (result.success) {
+      navigate("/dashboard"); // If successful, send them to the Dashboard!
+    } else {
+      setErrorMsg(result.error); // Show error if they typed the wrong password
+    }
   };
 
   return (
