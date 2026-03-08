@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
 from pathlib import Path
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -136,5 +137,20 @@ REST_FRAMEWORK = {
     )
 }
 
-MEDIA_URL = '/images/'
-MEDIA_ROOT = BASE_DIR / 'static/images'
+SIMPLE_JWT = {
+    # Extends the access token from 5 minutes to 1 full day
+    'ACCESS_TOKEN_LIFETIME': timedelta(days=1),
+    
+    # Extends the refresh token to 7 days
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+}
+
+# STATIC FILES (Your developer assets)
+STATIC_URL = 'static/'
+
+# MEDIA FILES (User uploaded assets - MUST be completely separate from static)
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
+
+# Bonus fix for that "DEFAULT_AUTO_FIELD" warning at the top of your terminal:
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

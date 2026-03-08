@@ -18,5 +18,5 @@ urlpatterns = [
     path('api/users/login/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ]
 
-# This allows your React frontend to actually view the uploaded images
-urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

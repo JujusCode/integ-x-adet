@@ -4,6 +4,8 @@ class Product(models.Model):
     name = models.CharField(max_length=255)
     description = models.TextField()
     specs = models.CharField(max_length=255)
+
+    status = models.CharField(max_length=50, default="In Stock")
     
     # DecimalField is crucial for currency so we don't get floating-point math errors
     price = models.DecimalField(max_digits=10, decimal_places=2) 
