@@ -7,15 +7,14 @@ import {
   Truck,
   CreditCard,
 } from "lucide-react";
-
 import { useCart } from "../store/CartContext";
 import { Button } from "../components/ui/Button";
 import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Modal } from "../components/ui/Modal";
-import { Link } from "react-router-dom";
 
+// Temporary mock data until we connect Django!
 const MOCK_PRODUCTS = [
   {
     id: 1,
@@ -63,81 +62,43 @@ const MOCK_PRODUCTS = [
   },
 ];
 
-export default function Storefront() {
+export default function Allproducts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
   const { addToCart } = useCart();
 
-  const gridBackgroundStyle = {
-    backgroundSize: "50px 50px",
-    backgroundImage: `
-      linear-gradient(to right, rgba(30, 41, 59, 0.5) 1px, transparent 1px),
-      linear-gradient(to bottom, rgba(30, 41, 59, 0.5) 1px, transparent 1px)
-    `,
-    maskImage: "radial-gradient(circle at center, black 40%, transparent 100%)",
-    WebkitMaskImage:
-      "radial-gradient(circle at center, black 40%, transparent 100%)",
-  };
-
   return (
-    <div className="min-h-screen bg-[#030304] text-white font-body selection:bg-[#F7931A]/30">
-      <section className="relative py-24 overflow-hidden flex flex-col items-center justify-center min-h-[60vh]">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-[#F7931A] opacity-5 blur-[120px] rounded-full pointer-events-none" />
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={gridBackgroundStyle}
-        />
-
-        <div className="relative z-10 max-w-7xl mx-auto px-6 text-center space-y-8">
-          <Badge
-            variant="success"
-            className="backdrop-blur-sm bg-white/5 border-white/10"
-          >
-            Trusted by Filipinos Nationwide 🇵🇭
-          </Badge>
-
-          <h1 className="font-heading text-4xl sm:text-5xl md:text-7xl font-bold tracking-tight text-white leading-tight">
-            Your Next Upgrade, <br />
-            <span className="bg-gradient-to-r from-[#F7931A] to-[#FFD600] bg-clip-text text-transparent">
-              Right at Your Fingertips.
-            </span>
+    <div className="min-h-[calc(100vh-80px)] bg-[#030304] text-white font-body selection:bg-[#F7931A]/30 py-12">
+      <div className="max-w-7xl mx-auto px-6 space-y-12">
+        {/* Header Section */}
+        <div>
+          <h1 className="font-heading text-3xl md:text-4xl font-bold tracking-tight text-white mb-4">
+            All Devices
           </h1>
-
-          <p className="font-body text-[#94A3B8] text-lg md:text-xl max-w-2xl mx-auto leading-relaxed">
-            Find the perfect smartphone for your everyday life. Whether it's for
-            capturing memories, seamless browsing, or non-stop gaming, we've got
-            you covered.
-          </p>
-        </div>
-      </section>
-
-      <section className="max-w-7xl mx-auto px-6 pb-12">
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
-          <div className="relative w-full max-w-md group flex items-center">
-            <Search className="absolute left-3 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors z-10" />
-            <Input
-              type="text"
-              placeholder="Search for models, brands, or features..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-
-          {/* Changed tags to be consumer-focused */}
-          <div className="flex gap-4 font-mono text-sm text-[#94A3B8]">
-            <span className="flex items-center gap-1">
-              <Truck className="w-4 h-4 text-[#F7931A]" /> Cash on Delivery
-            </span>
-            <span className="flex items-center gap-1">
-              <CheckCircle2 className="w-4 h-4 text-[#FFD600]" /> Official
-              Warranty
-            </span>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div className="relative w-full max-w-md group flex items-center">
+              <Search className="absolute left-3 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors z-10" />
+              <Input
+                type="text"
+                placeholder="Search for models, brands, or features..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <div className="flex gap-4 font-mono text-sm text-[#94A3B8]">
+              <span className="flex items-center gap-1">
+                <Truck className="w-4 h-4 text-[#F7931A]" /> Cash on Delivery
+              </span>
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="w-4 h-4 text-[#FFD600]" /> Official
+                Warranty
+              </span>
+            </div>
           </div>
         </div>
-      </section>
 
-      <section className="max-w-7xl mx-auto px-6 pb-24">
+        {/* Product Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           {MOCK_PRODUCTS.filter((p) =>
             p.name.toLowerCase().includes(searchQuery.toLowerCase()),
@@ -192,27 +153,14 @@ export default function Storefront() {
                 className="w-full gap-2"
                 onClick={() => setSelectedProduct(product)}
               >
-                <ShoppingCart className="w-4 h-4" />
-                View Details
+                <ShoppingCart className="w-4 h-4" /> View Details
               </Button>
             </Card>
           ))}
         </div>
+      </div>
 
-        <div className="mt-16 flex justify-center">
-          <Link to="/products">
-            {" "}
-            {/* <-- WRAP THE BUTTON IN THIS LINK */}
-            <Button
-              variant="outline"
-              className="px-8 border-white/20 hover:bg-white/5"
-            >
-              Show all products
-            </Button>
-          </Link>
-        </div>
-      </section>
-
+      {/* Modal */}
       <Modal
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
@@ -243,17 +191,14 @@ export default function Storefront() {
                 </p>
               </div>
             </div>
-
             <p className="font-body text-[#94A3B8] leading-relaxed">
               {selectedProduct.description}
             </p>
-
             <div className="flex items-center justify-between pt-4">
               <span className="font-mono text-3xl font-bold text-[#FFD600]">
                 {selectedProduct.price}
               </span>
             </div>
-
             <div className="grid grid-cols-2 gap-4 pt-4">
               <Button
                 variant="outline"
@@ -265,7 +210,6 @@ export default function Storefront() {
               >
                 <ShoppingCart className="w-4 h-4" /> Add to Cart
               </Button>
-
               <Button className="w-full gap-2">
                 <CreditCard className="w-4 h-4" /> Buy Now
               </Button>
@@ -273,14 +217,6 @@ export default function Storefront() {
           </div>
         )}
       </Modal>
-
-      <footer className="border-t border-white/10 bg-[#030304] py-8 mt-12">
-        <div className="max-w-7xl mx-auto px-6 text-center">
-          <p className="font-mono text-sm text-[#94A3B8]">
-            © {new Date().getFullYear()} Konekta. All rights reserved.
-          </p>
-        </div>
-      </footer>
     </div>
   );
 }

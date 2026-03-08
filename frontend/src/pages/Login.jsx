@@ -11,13 +11,13 @@ import {
 import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
-import { useAuth } from "../store/AuthContext"; // <-- Import the hook
-import { Link, useNavigate } from "react-router-dom"; // <-- Add useNavigate
+import { useAuth } from "../store/AuthContext";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [errorMsg, setErrorMsg] = useState(""); // State for showing errors
+  const [errorMsg, setErrorMsg] = useState("");
 
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -33,24 +33,21 @@ export default function Login() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setErrorMsg(""); // Clear old errors
+    setErrorMsg("");
 
-    // Call our new login function
     const result = await login(email, password);
 
     if (result.success) {
-      navigate("/dashboard"); // If successful, send them to the Dashboard!
+      navigate("/dashboard");
     } else {
-      setErrorMsg(result.error); // Show error if they typed the wrong password
+      setErrorMsg(result.error);
     }
   };
 
   return (
     <div className="relative min-h-[calc(100vh-80px)] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 overflow-hidden">
-      {/* Ambient Radial Glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#F7931A] opacity-5 blur-[100px] rounded-full pointer-events-none" />
 
-      {/* Grid Texture */}
       <div
         className="absolute inset-0 pointer-events-none"
         style={gridBackgroundStyle}
@@ -62,7 +59,7 @@ export default function Login() {
             variant="success"
             className="bg-white/5 backdrop-blur-sm border-white/10"
           >
-            <ShieldCheck className="w-3 h-3 mr-1" /> Secure Connection
+            <ShieldCheck className="w-3 h-3 mr-1" /> Secure Login
           </Badge>
         </div>
 
@@ -72,10 +69,10 @@ export default function Login() {
               <Key className="w-6 h-6 text-[#F7931A]" />
             </div>
             <CardTitle className="text-3xl tracking-tight">
-              Access Node
+              Welcome Back
             </CardTitle>
             <p className="text-sm font-mono text-[#94A3B8] mt-2">
-              Enter your credentials to continue
+              Sign in to your Konekta account
             </p>
           </CardHeader>
 
@@ -83,29 +80,36 @@ export default function Login() {
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div className="relative group">
-                  <Mail className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors" />
                   <Input
                     type="email"
                     placeholder="Email address"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className="pl-8"
+                    className="pl-10"
                     required
                   />
                 </div>
 
                 <div className="relative group">
-                  <Key className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors" />
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors" />
                   <Input
                     type="password"
-                    placeholder="Decryption key (Password)"
+                    placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="pl-8"
+                    className="pl-10"
                     required
                   />
                 </div>
               </div>
+
+              {/* Show error message if login fails */}
+              {errorMsg && (
+                <p className="text-[#EA580C] text-xs font-mono text-center">
+                  {errorMsg}
+                </p>
+              )}
 
               <div className="flex items-center justify-between text-sm font-mono">
                 <label className="flex items-center gap-2 cursor-pointer group">
@@ -114,29 +118,29 @@ export default function Login() {
                     className="w-4 h-4 rounded border-white/20 bg-black/50 text-[#F7931A] focus:ring-[#F7931A] focus:ring-offset-0 transition-colors"
                   />
                   <span className="text-[#94A3B8] group-hover:text-white transition-colors">
-                    Remember device
+                    Remember me
                   </span>
                 </label>
                 <a
                   href="#"
                   className="text-[#F7931A] hover:text-[#FFD600] transition-colors hover:underline"
                 >
-                  Lost key?
+                  Forgot password?
                 </a>
               </div>
             </CardContent>
 
             <CardFooter className="flex-col gap-4 pb-8">
               <Button type="submit" className="w-full gap-2">
-                Initialize Session <ArrowRight className="w-4 h-4" />
+                Sign In <ArrowRight className="w-4 h-4" />
               </Button>
               <p className="text-sm text-[#94A3B8] font-mono text-center">
-                New to VaultPhones?{" "}
+                New to Konekta?{" "}
                 <Link
                   to="/register"
                   className="text-white hover:text-[#F7931A] transition-colors underline decoration-white/30 hover:decoration-[#F7931A]"
                 >
-                  Create an entity
+                  Create an account
                 </Link>
               </p>
             </CardFooter>

@@ -54,17 +54,17 @@ export default function Register() {
             variant="warning"
             className="bg-white/5 backdrop-blur-sm border-white/10"
           >
-            <Shield className="w-3 h-3 mr-1" /> Encrypted Setup
+            <Shield className="w-3 h-3 mr-1" /> Secure Registration
           </Badge>
         </div>
 
         <Card>
           <CardHeader className="text-center pb-6">
             <CardTitle className="text-3xl tracking-tight">
-              Generate Keys
+              Create Account
             </CardTitle>
             <p className="text-sm font-mono text-[#94A3B8] mt-2">
-              Establish your secure identity
+              Join Konekta today
             </p>
           </CardHeader>
 
@@ -72,53 +72,53 @@ export default function Register() {
             <CardContent className="space-y-6">
               <div className="space-y-4">
                 <div className="relative group">
-                  <User className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors" />
                   <Input
                     type="text"
                     name="name"
-                    placeholder="Entity Name (Full Name)"
+                    placeholder="Full Name"
                     value={formData.name}
                     onChange={handleChange}
-                    className="pl-8"
+                    className="pl-10"
                     required
                   />
                 </div>
 
                 <div className="relative group">
-                  <Mail className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors" />
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors" />
                   <Input
                     type="email"
                     name="email"
                     placeholder="Email address"
                     value={formData.email}
                     onChange={handleChange}
-                    className="pl-8"
+                    className="pl-10"
                     required
                   />
                 </div>
 
                 <div className="relative group">
-                  <Key className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors" />
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors" />
                   <Input
                     type="password"
                     name="password"
-                    placeholder="Master Password"
+                    placeholder="Password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="pl-8"
+                    className="pl-10"
                     required
                   />
                 </div>
 
                 <div className="relative group">
-                  <Shield className="absolute left-0 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors" />
+                  <Shield className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors" />
                   <Input
                     type="password"
                     name="confirmPassword"
-                    placeholder="Verify Master Password"
+                    placeholder="Confirm Password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="pl-8"
+                    className="pl-10"
                     required
                   />
                 </div>
@@ -127,15 +127,15 @@ export default function Register() {
 
             <CardFooter className="flex-col gap-4 pb-8">
               <Button type="submit" className="w-full gap-2">
-                Generate Identity <ArrowRight className="w-4 h-4" />
+                Sign Up <ArrowRight className="w-4 h-4" />
               </Button>
               <p className="text-sm text-[#94A3B8] font-mono text-center">
-                Already established?{" "}
+                Already have an account?{" "}
                 <Link
                   to="/login"
                   className="text-white hover:text-[#F7931A] transition-colors underline decoration-white/30 hover:decoration-[#F7931A]"
                 >
-                  Access Node
+                  Sign In
                 </Link>
               </p>
             </CardFooter>
