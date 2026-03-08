@@ -1,6 +1,7 @@
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // <-- Added useNavigate
 import { Shield, Mail, Key, User, ArrowRight } from "lucide-react";
+import api from "../services/api"; // <-- Added your API bridge
 
 import {
   Card,
@@ -14,12 +15,17 @@ import { Button } from "../components/ui/Button";
 import { Badge } from "../components/ui/Badge";
 
 export default function Register() {
+  const navigate = useNavigate(); // For redirecting after success
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
     confirmPassword: "",
   });
+
+  const [errorMsg, setErrorMsg] = useState(""); // To show Django errors
+  const [isLoading, setIsLoading] = useState(false);
 
   const gridBackgroundStyle = {
     backgroundSize: "50px 50px",
@@ -34,10 +40,47 @@ export default function Register() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // We will connect this to Django later
-    console.log("Registration attempt:", formData);
+    setErrorMsg("");
+
+    // 1. Frontend Validation: Check if passwords match
+    if (formData.password !== formData.confirmPassword) {
+      setErrorMsg("Passwords do not match!");
+      return;
+    }
+
+    setIsLoading(true);
+
+    try {
+      // 2. Send the data to Django
+      // Note: Make sure your Django backend expects these exact field names!
+      const response = await api.post("users/register/", {
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+
+      // 3. Success! Send them to the login page
+      alert("Account created successfully! Please sign in.");
+      navigate("/login");
+    } catch (error) {
+      console.error("Registration error:", error.response?.data);
+
+      // Try to extract a readable error message from Django
+      const data = error.response?.data;
+      if (data && typeof data === "object") {
+        // Grab the first error message Django sends back (e.g., "email: This email is already in use.")
+        const firstKey = Object.keys(data)[0];
+        setErrorMsg(`${firstKey}: ${data[firstKey]}`);
+      } else {
+        setErrorMsg(
+          "Registration failed. Please check your information and try again.",
+        );
+      }
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -123,11 +166,23 @@ export default function Register() {
                   />
                 </div>
               </div>
+
+              {/* Display Errors Here */}
+              {errorMsg && (
+                <p className="text-[#EA580C] text-xs font-mono text-center bg-[#EA580C]/10 py-2 rounded border border-[#EA580C]/20">
+                  {errorMsg}
+                </p>
+              )}
             </CardContent>
 
             <CardFooter className="flex-col gap-4 pb-8">
-              <Button type="submit" className="w-full gap-2">
-                Sign Up <ArrowRight className="w-4 h-4" />
+              <Button
+                type="submit"
+                className="w-full gap-2"
+                disabled={isLoading}
+              >
+                {isLoading ? "Creating Account..." : "Sign Up"}{" "}
+                <ArrowRight className="w-4 h-4" />
               </Button>
               <p className="text-sm text-[#94A3B8] font-mono text-center">
                 Already have an account?{" "}

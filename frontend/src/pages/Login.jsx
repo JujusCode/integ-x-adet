@@ -19,7 +19,7 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
 
-  const { login } = useAuth();
+  const { login, isAdmin } = useAuth(); // Add isAdmin here
   const navigate = useNavigate();
 
   const gridBackgroundStyle = {
@@ -38,7 +38,13 @@ export default function Login() {
     const result = await login(email, password);
 
     if (result.success) {
-      navigate("/dashboard");
+      // The login was successful, now we check the state that was just updated
+      // If the user is an admin, send to dashboard, otherwise send to home
+      if (result.isAdmin || isAdmin) {
+        navigate("/dashboard");
+      } else {
+        navigate("/");
+      }
     } else {
       setErrorMsg(result.error);
     }

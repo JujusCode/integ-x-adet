@@ -34,6 +34,7 @@ export function AuthProvider({ children }) {
     }
   };
 
+  // Inside AuthContext.jsx
   const login = async (email, password) => {
     try {
       const response = await api.post("users/login/", {
@@ -41,17 +42,19 @@ export function AuthProvider({ children }) {
         password: password,
       });
 
-      // 1. SECURE THE KEYS: Save them to the browser immediately
       localStorage.setItem("access_token", response.data.access);
       localStorage.setItem("refresh_token", response.data.refresh);
-      console.log("Keys secured in Local Storage!"); // Just to confirm
 
-      // 2. FETCH PROFILE: Now that the keys are saved, go get the admin status
-      await fetchUserProfile();
+      // Capture the profile data to return it to the login page
+      const profileResponse = await api.get("users/profile/");
+      setUser(profileResponse.data);
+      setIsAdmin(profileResponse.data.isAdmin);
 
-      return { success: true };
+      return {
+        success: true,
+        isAdmin: profileResponse.data.isAdmin, // Pass it back directly
+      };
     } catch (error) {
-      console.error("Login failed", error.response?.data);
       return { success: false, error: "Invalid credentials" };
     }
   };

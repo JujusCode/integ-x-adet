@@ -1,30 +1,21 @@
 import React from "react";
 import { Navigate } from "react-router-dom";
-import { ShieldAlert } from "lucide-react";
 import { useAuth } from "../../store/AuthContext";
 
-export function ProtectedRoute({ children }) {
-  const { user, isAdmin, loading } = useAuth();
+export function ProtectedRoute({ children, adminOnly = false }) {
+  // Grab user and isAdmin from your Context
+  const { user, isAdmin } = useAuth();
 
-  // 1. Show a cool cyberpunk loading state while checking the token
-  if (loading) {
-    return (
-      <div className="min-h-[calc(100vh-80px)] flex items-center justify-center bg-[#030304]">
-        <div className="animate-pulse flex flex-col items-center gap-4 text-[#F7931A]">
-          <ShieldAlert className="w-12 h-12" />
-          <p className="font-mono text-sm tracking-widest uppercase">
-            Verifying Clearance...
-          </p>
-        </div>
-      </div>
-    );
-  }
-
-  // 2. The Bouncer: If not logged in, OR not an admin, kick them to login
-  if (!user || !isAdmin) {
+  // 1. If there is no user logged in, kick them to login
+  if (!user) {
     return <Navigate to="/login" replace />;
   }
 
-  // 3. If they pass the checks, render the protected component (the Dashboard)
+  // 2. If this page requires Admin access (like Dashboard), but they aren't an admin
+  if (adminOnly && !isAdmin) {
+    return <Navigate to="/" replace />; // Kick normal users back to storefront
+  }
+
+  // If they pass the checks, let them view the page!
   return children;
 }
