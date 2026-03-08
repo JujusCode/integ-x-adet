@@ -1,10 +1,46 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
-from .models import Product
-from .serializers import ProductSerializer
+from django.contrib.auth.models import User
+from django.contrib.auth.hashers import make_password
 
-# Endpoint 1: Handles GET (Storefront) and POST (Admin adding a new phone)
+from .models import Product
+from .serializers import ProductSerializer, UserSerializer
+
+# ==========================================
+# USER ENDPOINTS
+# ==========================================
+
+@api_view(['POST'])
+def register_user(request):
+    data = request.data
+    try:
+        # Create a new user in the database
+        user = User.objects.create(
+            first_name=data['name'],
+            username=data['email'], # We use email as the username
+            email=data['email'],
+            password=make_password(data['password']) # Encrypts the password!
+        )
+        serializer = UserSerializer(user, many=False)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    except:
+        message = {'detail': 'A user with this email already exists'}
+        return Response(message, status=status.HTTP_400_BAD_REQUEST)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated]) # Requires a valid JWT token!
+def get_user_profile(request):
+    user = request.user
+    serializer = UserSerializer(user, many=False)
+    return Response(serializer.data)
+
+
+# ==========================================
+# PRODUCT ENDPOINTS
+# ==========================================
+
 @api_view(['GET', 'POST'])
 def product_list(request):
     if request.method == 'GET':
@@ -13,13 +49,16 @@ def product_list(request):
         return Response(serializer.data)
         
     elif request.method == 'POST':
+        # SECURITY: Only admins can create products
+        if not request.user.is_staff:
+            return Response({'detail': 'Not authorized'}, status=status.HTTP_401_UNAUTHORIZED)
+        
         serializer = ProductSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-# Endpoint 2: Handles PUT (Admin editing) and DELETE (Admin removing)
 @api_view(['GET', 'PUT', 'DELETE'])
 def product_detail(request, pk):
     try:
@@ -31,7 +70,11 @@ def product_detail(request, pk):
         serializer = ProductSerializer(product)
         return Response(serializer.data)
 
-    elif request.method == 'PUT':
+    # SECURITY: Lock out non-admins from the next two actions
+    if not request.user.is_staff:
+        return Response({'detail': 'Not authorized'}, status=status.HTTP_401_UNAUTHORIZED)
+
+    if request.method == 'PUT':
         serializer = ProductSerializer(product, data=request.data)
         if serializer.is_valid():
             serializer.save()
