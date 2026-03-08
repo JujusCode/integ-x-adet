@@ -34,21 +34,19 @@ export function AuthProvider({ children }) {
     }
   };
 
-  // The actual login function
   const login = async (email, password) => {
     try {
-      // 1. Send credentials to Django's JWT endpoint
-      // Note: Django SimpleJWT uses 'username' by default, so we map email to it
       const response = await api.post("users/login/", {
         username: email,
         password: password,
       });
 
-      // 2. Save the VIP wristbands to the browser's Local Storage
+      // 1. SECURE THE KEYS: Save them to the browser immediately
       localStorage.setItem("access_token", response.data.access);
       localStorage.setItem("refresh_token", response.data.refresh);
+      console.log("Keys secured in Local Storage!"); // Just to confirm
 
-      // 3. Fetch the user's profile data to see if they are an admin
+      // 2. FETCH PROFILE: Now that the keys are saved, go get the admin status
       await fetchUserProfile();
 
       return { success: true };

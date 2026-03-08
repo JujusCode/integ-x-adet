@@ -15,7 +15,10 @@ api.interceptors.request.use(
 
     // If we have one, attach it to the Authorization header
     if (token) {
+      console.log(`Attaching token to outgoing request to: ${config.url}`); // <-- ADD THIS TRACKER
       config.headers.Authorization = `Bearer ${token}`;
+    } else {
+      console.log(`No token found for request to: ${config.url}`); // <-- ADD THIS TRACKER
     }
     return config;
   },
