@@ -14,5 +14,8 @@ class Product(models.Model):
     # Always good practice to know when a device was added to the database
     created_at = models.DateTimeField(auto_now_add=True)
 
+    # ADDED: The Image Field
+    image = models.ImageField(upload_to='products/', null=True, blank=True)
+
     def __str__(self):
         return f"{self.name} - ${self.price}"
