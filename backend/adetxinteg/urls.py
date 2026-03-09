@@ -29,4 +29,5 @@ urlpatterns = [
     path('orders/', views.get_orders, name='get-orders'),
     # POST: Finalize checkout, lock prices, wipe cart
     path('orders/checkout/', views.checkout, name='checkout'),
-]
+    path('orders/<int:pk>/status/', views.update_order_status, name='update-order-status'),
+] 
