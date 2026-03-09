@@ -6,7 +6,7 @@ import {
   Minus,
   ShoppingCart,
   ArrowRight,
-  Cpu,
+  Smartphone,
   ShieldCheck,
 } from "lucide-react";
 
@@ -24,15 +24,22 @@ export default function CartPage() {
   const { cartItems, updateQuantity, removeFromCart } = useCart();
   const navigate = useNavigate();
 
-  // Helper to convert string price "$1,299.00" to number for math
-  const parsePrice = (priceStr) =>
-    parseFloat(priceStr.replace(/[^0-9.-]+/g, ""));
+  // Helper to fix Django image URLs
+  const getImageUrl = (imagePath) => {
+    if (!imagePath) return "";
+    return imagePath.startsWith("http")
+      ? imagePath
+      : `http://localhost:8000${imagePath}`;
+  };
+
+  // Convert Django's decimal string to a usable JavaScript number
+  const parsePrice = (priceStr) => parseFloat(priceStr || 0);
 
   const subtotal = cartItems.reduce(
-    (total, item) => total + parsePrice(item.price) * item.quantity,
+    (total, item) => total + parsePrice(item.product_price) * item.quantity,
     0,
   );
-  const networkFee = subtotal > 0 ? 25.0 : 0; // Mock shipping/network fee
+  const networkFee = subtotal > 0 ? 150.0 : 0; // Updated to 150 PHP for realism
   const total = subtotal + networkFee;
 
   // The Empty Cart State
@@ -43,7 +50,7 @@ export default function CartPage() {
           <ShoppingCart className="w-10 h-10 text-[#94A3B8]" />
         </div>
         <h2 className="font-heading text-3xl font-bold text-white mb-4">
-          Your Vault is Empty
+          Your Cart is Empty
         </h2>
         <p className="font-mono text-[#94A3B8] mb-8">
           No devices have been added to your secure cart yet.
@@ -75,21 +82,29 @@ export default function CartPage() {
               key={item.id}
               className="p-4 sm:p-6 flex flex-col sm:flex-row items-center gap-6"
             >
-              {/* Product Icon Mockup */}
-              <div className="w-24 h-24 shrink-0 bg-gradient-to-br from-black/60 to-white/5 rounded-xl border border-white/5 flex items-center justify-center">
-                <Cpu className="w-8 h-8 text-[#F7931A]/50" />
+              {/* Product Image fetched from Django */}
+              <div className="w-24 h-24 shrink-0 bg-white/5 rounded-xl border border-white/10 flex items-center justify-center overflow-hidden">
+                {item.product_image ? (
+                  <img
+                    src={getImageUrl(item.product_image)}
+                    alt={item.product_name}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Smartphone className="w-8 h-8 text-[#F7931A]/50" />
+                )}
               </div>
 
               {/* Item Details */}
               <div className="flex-grow text-center sm:text-left">
                 <h3 className="font-heading font-semibold text-lg text-white">
-                  {item.name}
+                  {item.product_name}
                 </h3>
-                <p className="font-mono text-sm text-[#94A3B8] mt-1">
-                  {item.specs}
-                </p>
                 <div className="font-mono text-xl font-medium text-[#FFD600] mt-2">
-                  {item.price}
+                  ₱
+                  {parsePrice(item.product_price).toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                  })}
                 </div>
               </div>
 
@@ -97,7 +112,9 @@ export default function CartPage() {
               <div className="flex flex-col items-center gap-4 shrink-0">
                 <div className="flex items-center bg-black/50 border border-white/10 rounded-lg overflow-hidden">
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                    onClick={() =>
+                      updateQuantity(item.product, item.quantity, -1)
+                    }
                     className="p-2 text-[#94A3B8] hover:text-white hover:bg-white/10 transition-colors"
                   >
                     <Minus className="w-4 h-4" />
@@ -106,7 +123,9 @@ export default function CartPage() {
                     {item.quantity}
                   </span>
                   <button
-                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                    onClick={() =>
+                      updateQuantity(item.product, item.quantity, 1)
+                    }
                     className="p-2 text-[#94A3B8] hover:text-white hover:bg-white/10 transition-colors"
                   >
                     <Plus className="w-4 h-4" />
@@ -133,16 +152,16 @@ export default function CartPage() {
               <div className="flex justify-between text-[#94A3B8]">
                 <span>Subtotal</span>
                 <span className="text-white">
-                  $
+                  ₱
                   {subtotal.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                   })}
                 </span>
               </div>
               <div className="flex justify-between text-[#94A3B8]">
-                <span>Network Fee (Shipping)</span>
+                <span>Shipping Fee</span>
                 <span className="text-white">
-                  $
+                  ₱
                   {networkFee.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                   })}
@@ -154,7 +173,7 @@ export default function CartPage() {
                   Total Estimated
                 </span>
                 <span className="text-3xl font-bold text-[#FFD600]">
-                  $
+                  ₱
                   {total.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                   })}
@@ -173,8 +192,7 @@ export default function CartPage() {
                     variant="success"
                     className="bg-transparent border-none"
                   >
-                    <ShieldCheck className="w-3 h-3 mr-1" /> End-to-End
-                    Encrypted
+                    <ShieldCheck className="w-3 h-3 mr-1" /> Secure Transaction
                   </Badge>
                 </div>
               </div>
