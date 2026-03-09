@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
+import api from "../services/api"; // Using your configured API instance!
 
 // Create the Context
 const CartContext = createContext();
@@ -7,51 +8,87 @@ const CartContext = createContext();
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
 
-  // Add an item to the cart (or increase quantity if it already exists)
-  const addToCart = (product) => {
-    // 1. Log the incoming data so we can see it in the Developer Console!
-    console.log("Attempting to add to cart:", product);
+  // FIXED: Now looking for the exact key your AuthContext uses!
+  const getToken = () => localStorage.getItem("access_token");
 
-    // 2. The Safety Net
-    if (!product || !product.id) {
-      console.error("CRITICAL: Invalid product passed to Cart!");
+  // Fetch the cart from Django
+  const fetchCart = async () => {
+    const token = getToken();
+    if (!token) {
+      setCartItems([]);
       return;
     }
 
-    // 3. The actual cart logic
-    setCartItems((prevItems) => {
-      const existingItem = prevItems.find((item) => item.id === product.id);
-      if (existingItem) {
-        console.log("Item exists! Increasing quantity.");
-        return prevItems.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item,
-        );
-      }
-      console.log("New item! Adding to cart.");
-      return [...prevItems, { ...product, quantity: 1 }];
-    });
+    try {
+      // Using your api instance means we don't need to type http://127... every time
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const response = await api.get("cart/", config);
+      setCartItems(response.data);
+    } catch (error) {
+      console.error("Error fetching cart from Django:", error);
+    }
   };
 
-  // Remove an item entirely
-  const removeFromCart = (productId) => {
-    setCartItems((prevItems) =>
-      prevItems.filter((item) => item.id !== productId),
-    );
+  // Run fetchCart when the app loads
+  useEffect(() => {
+    fetchCart();
+  }, []);
+
+  // Add an item to the database cart
+  const addToCart = async (product) => {
+    const token = getToken();
+    if (!token) {
+      alert("Please sign in to add items to your cart!");
+      return;
+    }
+
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const payload = { product_id: product.id, quantity: 1 };
+
+      await api.post("cart/", payload, config);
+      fetchCart(); // Instantly refresh the cart from the database
+    } catch (error) {
+      console.error("Error adding item to cart:", error);
+    }
   };
 
-  // Update specific quantity
-  const updateQuantity = (productId, quantity) => {
-    if (quantity < 1) return removeFromCart(productId);
-    setCartItems((prevItems) =>
-      prevItems.map((item) =>
-        item.id === productId ? { ...item, quantity } : item,
-      ),
-    );
+  // Remove an item entirely from the database
+  const removeFromCart = async (cartItemId) => {
+    const token = getToken();
+    if (!token) return;
+
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      await api.delete(`cart/${cartItemId}/`, config);
+      fetchCart();
+    } catch (error) {
+      console.error("Error removing item:", error);
+    }
   };
 
-  // Empty the cart after successful checkout
+  // Update specific quantity using our Django logic (+1 or -1)
+  const updateQuantity = async (productId, currentQuantity, delta) => {
+    const item = cartItems.find((i) => i.product === productId);
+    if (!item) return;
+
+    if (currentQuantity + delta < 1) {
+      return removeFromCart(item.id);
+    }
+
+    const token = getToken();
+    try {
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+      const payload = { product_id: productId, quantity: delta };
+
+      await api.post("cart/", payload, config);
+      fetchCart();
+    } catch (error) {
+      console.error("Error updating quantity:", error);
+    }
+  };
+
+  // Empty the cart locally
   const clearCart = () => setCartItems([]);
 
   // Calculate the total number of items for the Navbar badge
@@ -69,6 +106,7 @@ export function CartProvider({ children }) {
         updateQuantity,
         clearCart,
         cartItemCount,
+        fetchCart,
       }}
     >
       {children}
