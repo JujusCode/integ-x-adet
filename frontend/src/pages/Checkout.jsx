@@ -1,8 +1,9 @@
 import React, { useState } from "react";
-import { useNavigate, Navigate } from "react-router-dom"; // <-- ADDED Navigate here
+import { useNavigate, Navigate } from "react-router-dom";
 import { Shield, CreditCard, MapPin, CheckCircle } from "lucide-react";
 
 import { useCart } from "../store/CartContext";
+import api from "../services/api"; // Make sure to import your API service!
 import {
   Card,
   CardHeader,
@@ -13,32 +14,61 @@ import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 
 export default function Checkout() {
-  const { cartItems, clearCart } = useCart();
+  const { cartItems, fetchCart } = useCart();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // THE FIX: Use the <Navigate /> component to safely redirect during render!
+  // Form State for Django
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [zip, setZip] = useState("");
+
   if (cartItems.length === 0) {
     return <Navigate to="/" replace />;
   }
 
-  const parsePrice = (priceStr) =>
-    parseFloat(priceStr.replace(/[^0-9.-]+/g, ""));
+  // FIXED: Ensure we are safely parsing the Django product_price string
+  const parsePrice = (priceStr) => parseFloat(priceStr || 0);
+
+  // FIXED: Now points to item.product_price instead of item.price
   const subtotal = cartItems.reduce(
-    (total, item) => total + parsePrice(item.price) * item.quantity,
+    (total, item) => total + parsePrice(item.product_price) * item.quantity,
     0,
   );
-  const total = subtotal + 25.0;
+  const networkFee = 150.0; // Matching the CartPage fee
+  const total = subtotal + networkFee;
 
-  const handleCheckoutSubmit = (e) => {
+  // The Real Backend Checkout Logic
+  const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
     setIsProcessing(true);
 
-    // Simulate network delay
-    setTimeout(() => {
-      clearCart();
-      navigate("/success");
-    }, 2000);
+    try {
+      const token = localStorage.getItem("access_token");
+      const config = { headers: { Authorization: `Bearer ${token}` } };
+
+      // Combine the fields for the Django shipping_address model
+      const fullShippingAddress = `${address}, ${city}, ${zip}`;
+
+      const payload = {
+        shipping_address: fullShippingAddress,
+      };
+
+      // Send the order to MySQL!
+      await api.post("orders/checkout/", payload, config);
+
+      // Tell the frontend context to wipe the cart (syncing with the backend wipe)
+      fetchCart();
+
+      // Redirect to the success screen
+      const response = await api.post("orders/checkout/", payload, config);
+      fetchCart();
+      navigate("/success", { state: { orderData: response.data } }); // <-- Pass the order data!
+    } catch (error) {
+      console.error("Checkout failed:", error);
+      alert("There was an error processing your transaction.");
+      setIsProcessing(false);
+    }
   };
 
   return (
@@ -68,35 +98,46 @@ export default function Checkout() {
                 <label className="text-xs font-mono text-[#94A3B8] uppercase tracking-wider">
                   Full Name
                 </label>
-                <Input required placeholder="Satoshi Nakamoto" />
+                <Input required placeholder="Juan Dela Cruz" />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-mono text-[#94A3B8] uppercase tracking-wider">
                   Email Address
                 </label>
-                <Input
-                  required
-                  type="email"
-                  placeholder="transmission@node.com"
-                />
+                <Input required type="email" placeholder="juan@example.com" />
               </div>
               <div className="sm:col-span-2 space-y-2">
                 <label className="text-xs font-mono text-[#94A3B8] uppercase tracking-wider">
                   Physical Address
                 </label>
-                <Input required placeholder="123 Genesis Block Ave" />
+                <Input
+                  required
+                  placeholder="123 Mabini St."
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-mono text-[#94A3B8] uppercase tracking-wider">
                   City
                 </label>
-                <Input required placeholder="Cyberspace" />
+                <Input
+                  required
+                  placeholder="Cagayan De Oro"
+                  value={city}
+                  onChange={(e) => setCity(e.target.value)}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-xs font-mono text-[#94A3B8] uppercase tracking-wider">
                   Postal / Zip Code
                 </label>
-                <Input required placeholder="000000" />
+                <Input
+                  required
+                  placeholder="9000"
+                  value={zip}
+                  onChange={(e) => setZip(e.target.value)}
+                />
               </div>
             </CardContent>
           </Card>
@@ -152,9 +193,16 @@ export default function Checkout() {
                     className="flex justify-between text-sm font-mono"
                   >
                     <span className="text-[#94A3B8] truncate pr-4">
-                      {item.quantity}x {item.name}
+                      {/* FIXED: Now points to product_name */}
+                      {item.quantity}x {item.product_name}
                     </span>
-                    <span className="text-white">{item.price}</span>
+                    <span className="text-white">
+                      ₱
+                      {parsePrice(item.product_price).toLocaleString(
+                        undefined,
+                        { minimumFractionDigits: 2 },
+                      )}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -162,7 +210,7 @@ export default function Checkout() {
               <div className="border-t border-white/10 pt-4 flex justify-between items-end">
                 <span className="text-[#94A3B8] font-body">Final Total</span>
                 <span className="text-3xl font-bold text-[#FFD600]">
-                  $
+                  ₱
                   {total.toLocaleString(undefined, {
                     minimumFractionDigits: 2,
                   })}
@@ -174,7 +222,6 @@ export default function Checkout() {
                   type="submit"
                   className="w-full gap-2"
                   disabled={isProcessing}
-                  onClick={() => navigate("/success")}
                 >
                   {isProcessing ? (
                     <span className="animate-pulse">Broadcasting...</span>
