@@ -1,13 +1,23 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation, Navigate } from "react-router-dom";
 import { CheckCircle, ArrowRight, ShieldCheck } from "lucide-react";
 import { Card, CardContent } from "../components/ui/Card";
 import { Button } from "../components/ui/Button";
 
 export default function Success() {
-  // Generate a fake hash for the aesthetic
-  const txHash =
-    "0x" + Math.random().toString(16).substr(2, 40).padEnd(40, "0");
+  const location = useLocation();
+  const orderData = location.state?.orderData;
+
+  // If someone tries to visit /success directly without checking out, boot them to home
+  if (!orderData) {
+    return <Navigate to="/" replace />;
+  }
+
+  // Keep your fake hash for the aesthetic, but seed it with the order ID so it's consistent
+  const txHash = `0x${Math.abs(Math.sin(orderData.id) * 100000)
+    .toString(16)
+    .padEnd(40, "0")
+    .replace(".", "")}`;
 
   return (
     <div className="min-h-[calc(100vh-80px)] flex items-center justify-center py-12 px-4">
@@ -44,7 +54,19 @@ export default function Success() {
                 Network Block (Order ID)
               </span>
               <p className="font-mono text-white text-sm">
-                #VLT-{Math.floor(Math.random() * 1000000)}
+                #VLT-{orderData.id.toString().padStart(6, "0")}
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <span className="text-xs font-mono text-[#94A3B8] uppercase">
+                Total Authorized
+              </span>
+              <p className="font-mono text-white text-sm">
+                ₱
+                {parseFloat(orderData.total_amount).toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                })}
               </p>
             </div>
 
