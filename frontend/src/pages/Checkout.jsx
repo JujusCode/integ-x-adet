@@ -1,9 +1,15 @@
 import React, { useState } from "react";
 import { useNavigate, Navigate } from "react-router-dom";
-import { Shield, CreditCard, MapPin, CheckCircle } from "lucide-react";
+import {
+  Shield,
+  CreditCard,
+  MapPin,
+  CheckCircle,
+  Activity,
+} from "lucide-react";
 
 import { useCart } from "../store/CartContext";
-import api from "../services/api"; // Make sure to import your API service!
+import api from "../services/api";
 import {
   Card,
   CardHeader,
@@ -14,31 +20,45 @@ import { Input } from "../components/ui/Input";
 import { Button } from "../components/ui/Button";
 
 export default function Checkout() {
-  const { cartItems, fetchCart } = useCart();
+  const { cartItems, fetchCart, isCartLoading } = useCart();
   const navigate = useNavigate();
   const [isProcessing, setIsProcessing] = useState(false);
 
-  // Form State for Django
+  // Form State
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
   const [zip, setZip] = useState("");
 
+  // 1. Loading State: Wait for the database to return the cart data
+  if (isCartLoading) {
+    return (
+      <div className="min-h-[calc(100vh-80px)] flex items-center justify-center bg-[#030304]">
+        <div className="animate-pulse flex flex-col items-center gap-4 text-[#F7931A]">
+          <Activity className="w-12 h-12" />
+          <p className="font-mono text-sm tracking-widest uppercase">
+            Verifying Network Data...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Empty State: Kick back to home if cart is truly empty after loading
   if (cartItems.length === 0) {
     return <Navigate to="/" replace />;
   }
 
-  // FIXED: Ensure we are safely parsing the Django product_price string
+  // Calculate Totals
   const parsePrice = (priceStr) => parseFloat(priceStr || 0);
 
-  // FIXED: Now points to item.product_price instead of item.price
   const subtotal = cartItems.reduce(
     (total, item) => total + parsePrice(item.product_price) * item.quantity,
     0,
   );
-  const networkFee = 150.0; // Matching the CartPage fee
+  const networkFee = 150.0;
   const total = subtotal + networkFee;
 
-  // The Real Backend Checkout Logic
+  // 3. Checkout Submission
   const handleCheckoutSubmit = async (e) => {
     e.preventDefault();
     setIsProcessing(true);
@@ -47,23 +67,19 @@ export default function Checkout() {
       const token = localStorage.getItem("access_token");
       const config = { headers: { Authorization: `Bearer ${token}` } };
 
-      // Combine the fields for the Django shipping_address model
       const fullShippingAddress = `${address}, ${city}, ${zip}`;
 
       const payload = {
         shipping_address: fullShippingAddress,
       };
 
-      // Send the order to MySQL!
-      await api.post("orders/checkout/", payload, config);
-
-      // Tell the frontend context to wipe the cart (syncing with the backend wipe)
-      fetchCart();
-
-      // Redirect to the success screen
       const response = await api.post("orders/checkout/", payload, config);
-      fetchCart();
-      navigate("/success", { state: { orderData: response.data } }); // <-- Pass the order data!
+
+      // Tell context to wipe the frontend cart to match the backend
+      await fetchCart();
+
+      // Send them to success screen with the receipt data
+      navigate("/success", { state: { orderData: response.data } });
     } catch (error) {
       console.error("Checkout failed:", error);
       alert("There was an error processing your transaction.");
@@ -193,7 +209,6 @@ export default function Checkout() {
                     className="flex justify-between text-sm font-mono"
                   >
                     <span className="text-[#94A3B8] truncate pr-4">
-                      {/* FIXED: Now points to product_name */}
                       {item.quantity}x {item.product_name}
                     </span>
                     <span className="text-white">
