@@ -116,24 +116,6 @@ export default function Login() {
                   {errorMsg}
                 </p>
               )}
-
-              <div className="flex items-center justify-between text-sm font-mono">
-                <label className="flex items-center gap-2 cursor-pointer group">
-                  <input
-                    type="checkbox"
-                    className="w-4 h-4 rounded border-white/20 bg-black/50 text-[#F7931A] focus:ring-[#F7931A] focus:ring-offset-0 transition-colors"
-                  />
-                  <span className="text-[#94A3B8] group-hover:text-white transition-colors">
-                    Remember me
-                  </span>
-                </label>
-                <a
-                  href="#"
-                  className="text-[#F7931A] hover:text-[#FFD600] transition-colors hover:underline"
-                >
-                  Forgot password?
-                </a>
-              </div>
             </CardContent>
 
             <CardFooter className="flex-col gap-4 pb-8">
