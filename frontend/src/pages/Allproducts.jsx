@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Truck,
   CreditCard,
+  Lock, // Added lock icon
 } from "lucide-react";
 import { useCart } from "../store/CartContext";
 import { Button } from "../components/ui/Button";
@@ -14,7 +15,7 @@ import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Modal } from "../components/ui/Modal";
-import { useNavigate } from "react-router-dom"; // <-- Added useNavigate import
+import { useNavigate } from "react-router-dom";
 
 export default function Allproducts() {
   const [products, setProducts] = useState([]);
@@ -22,8 +23,10 @@ export default function Allproducts() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  const [showAuthModal, setShowAuthModal] = useState(false); // Protect actions
+
   const { addToCart } = useCart();
-  const navigate = useNavigate(); // <-- Initialized navigation hook
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -46,12 +49,21 @@ export default function Allproducts() {
     }).format(price);
   };
 
-  // Helper function to fix Django image URLs
   const getImageUrl = (imagePath) => {
     if (!imagePath) return "";
     return imagePath.startsWith("http")
       ? imagePath
       : `http://localhost:8000${imagePath}`;
+  };
+
+  const checkAuthAndProceed = () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      setSelectedProduct(null);
+      setShowAuthModal(true);
+      return false;
+    }
+    return true;
   };
 
   if (loading) {
@@ -61,6 +73,16 @@ export default function Allproducts() {
       </div>
     );
   }
+
+  // SUPERCHARGED SEARCH LOGIC
+  const filteredProducts = products.filter((p) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(query) ||
+      p.specs.toLowerCase().includes(query) ||
+      p.description.toLowerCase().includes(query)
+    );
+  });
 
   return (
     <div className="min-h-[calc(100vh-80px)] bg-[#030304] text-white font-body selection:bg-[#F7931A]/30 py-12">
@@ -74,7 +96,7 @@ export default function Allproducts() {
               <Search className="absolute left-3 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors z-10" />
               <Input
                 type="text"
-                placeholder="Search for models, brands, or features..."
+                placeholder="Search for models, specs, or features..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="pl-10"
@@ -92,12 +114,13 @@ export default function Allproducts() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {products
-            .filter((p) =>
-              p.name.toLowerCase().includes(searchQuery.toLowerCase()),
-            )
-            .map((product) => (
+        {filteredProducts.length === 0 ? (
+          <div className="text-center text-[#94A3B8] font-mono py-12">
+            No devices matched your search for "{searchQuery}".
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {filteredProducts.map((product) => (
               <Card
                 key={product.id}
                 interactive
@@ -152,7 +175,8 @@ export default function Allproducts() {
                 </Button>
               </Card>
             ))}
-        </div>
+          </div>
+        )}
       </div>
 
       <Modal
@@ -195,20 +219,23 @@ export default function Allproducts() {
                 variant="outline"
                 className="w-full gap-2"
                 onClick={() => {
-                  addToCart(selectedProduct);
-                  setSelectedProduct(null);
+                  if (checkAuthAndProceed()) {
+                    addToCart(selectedProduct);
+                    setSelectedProduct(null);
+                  }
                 }}
               >
                 <ShoppingCart className="w-4 h-4" /> Add to Cart
               </Button>
 
-              {/* THE UPDATED BUY NOW BUTTON */}
               <Button
                 className="w-full gap-2"
                 onClick={async () => {
-                  await addToCart(selectedProduct);
-                  setSelectedProduct(null);
-                  navigate("/checkout");
+                  if (checkAuthAndProceed()) {
+                    await addToCart(selectedProduct);
+                    setSelectedProduct(null);
+                    navigate("/checkout");
+                  }
                 }}
               >
                 <CreditCard className="w-4 h-4" /> Buy Now
@@ -216,6 +243,37 @@ export default function Allproducts() {
             </div>
           </div>
         )}
+      </Modal>
+
+      <Modal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)}>
+        <div className="text-center space-y-6 py-4">
+          <div className="mx-auto w-16 h-16 bg-[#F7931A]/10 border border-[#F7931A]/20 rounded-full flex items-center justify-center">
+            <Lock className="w-8 h-8 text-[#F7931A]" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="font-heading text-2xl font-bold text-white">
+              Authentication Required
+            </h2>
+            <p className="font-body text-[#94A3B8]">
+              You need to be signed in to add items to your secure vault and
+              complete transactions.
+            </p>
+          </div>
+
+          <div className="flex gap-4 pt-4 border-t border-white/10">
+            <Button
+              variant="outline"
+              className="w-full border-white/10 hover:bg-white/5"
+              onClick={() => setShowAuthModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button className="w-full" onClick={() => navigate("/login")}>
+              Sign In
+            </Button>
+          </div>
+        </div>
       </Modal>
     </div>
   );
