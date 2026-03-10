@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Truck,
   CreditCard,
+  Lock, // <-- Imported Lock icon for the Auth Modal
 } from "lucide-react";
 import { useCart } from "../store/CartContext";
 import { Button } from "../components/ui/Button";
@@ -14,15 +15,18 @@ import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Modal } from "../components/ui/Modal";
-import { Link, useNavigate } from "react-router-dom"; // <-- Imported useNavigate here
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Storefront() {
   const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  // NEW: State for the Authentication Prompt Modal
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   const { addToCart } = useCart();
-  const navigate = useNavigate(); // <-- Initialized the navigation hook
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -59,6 +63,17 @@ export default function Storefront() {
     maskImage: "radial-gradient(circle at center, black 40%, transparent 100%)",
     WebkitMaskImage:
       "radial-gradient(circle at center, black 40%, transparent 100%)",
+  };
+
+  // NEW: Helper function to check auth before adding to cart
+  const checkAuthAndProceed = () => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      setSelectedProduct(null); // Close the product modal
+      setShowAuthModal(true); // Open the Auth modal
+      return false;
+    }
+    return true;
   };
 
   return (
@@ -194,6 +209,7 @@ export default function Storefront() {
         </div>
       </section>
 
+      {/* PRODUCT DETAILS MODAL */}
       <Modal
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
@@ -237,20 +253,25 @@ export default function Storefront() {
                 variant="outline"
                 className="w-full gap-2"
                 onClick={() => {
-                  addToCart(selectedProduct);
-                  setSelectedProduct(null);
+                  // Protect Add to Cart with Auth Check
+                  if (checkAuthAndProceed()) {
+                    addToCart(selectedProduct);
+                    setSelectedProduct(null);
+                  }
                 }}
               >
                 <ShoppingCart className="w-4 h-4" /> Add to Cart
               </Button>
 
-              {/* THE UPDATED BUY NOW BUTTON */}
               <Button
                 className="w-full gap-2"
                 onClick={async () => {
-                  await addToCart(selectedProduct); // Add the item to the database cart
-                  setSelectedProduct(null); // Close the modal
-                  navigate("/checkout"); // Send them instantly to checkout
+                  // Protect Buy Now with Auth Check
+                  if (checkAuthAndProceed()) {
+                    await addToCart(selectedProduct);
+                    setSelectedProduct(null);
+                    navigate("/checkout");
+                  }
                 }}
               >
                 <CreditCard className="w-4 h-4" /> Buy Now
@@ -258,6 +279,38 @@ export default function Storefront() {
             </div>
           </div>
         )}
+      </Modal>
+
+      {/* NEW: AUTHENTICATION REQUIRED MODAL */}
+      <Modal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)}>
+        <div className="text-center space-y-6 py-4">
+          <div className="mx-auto w-16 h-16 bg-[#F7931A]/10 border border-[#F7931A]/20 rounded-full flex items-center justify-center">
+            <Lock className="w-8 h-8 text-[#F7931A]" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="font-heading text-2xl font-bold text-white">
+              Authentication Required
+            </h2>
+            <p className="font-body text-[#94A3B8]">
+              You need to be signed in to add items to your secure vault and
+              complete transactions.
+            </p>
+          </div>
+
+          <div className="flex gap-4 pt-4 border-t border-white/10">
+            <Button
+              variant="outline"
+              className="w-full border-white/10 hover:bg-white/5"
+              onClick={() => setShowAuthModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button className="w-full" onClick={() => navigate("/login")}>
+              Sign In
+            </Button>
+          </div>
+        </div>
       </Modal>
 
       <footer className="border-t border-white/10 bg-[#030304] py-8 mt-12">
