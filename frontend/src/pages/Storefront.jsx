@@ -7,7 +7,7 @@ import {
   CheckCircle2,
   Truck,
   CreditCard,
-  Lock, // <-- Imported Lock icon for the Auth Modal
+  Lock,
 } from "lucide-react";
 import { useCart } from "../store/CartContext";
 import { Button } from "../components/ui/Button";
@@ -21,8 +21,6 @@ export default function Storefront() {
   const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
-
-  // NEW: State for the Authentication Prompt Modal
   const [showAuthModal, setShowAuthModal] = useState(false);
 
   const { addToCart } = useCart();
@@ -65,16 +63,30 @@ export default function Storefront() {
       "radial-gradient(circle at center, black 40%, transparent 100%)",
   };
 
-  // NEW: Helper function to check auth before adding to cart
   const checkAuthAndProceed = () => {
     const token = localStorage.getItem("access_token");
     if (!token) {
-      setSelectedProduct(null); // Close the product modal
-      setShowAuthModal(true); // Open the Auth modal
+      setSelectedProduct(null);
+      setShowAuthModal(true);
       return false;
     }
     return true;
   };
+
+  // SUPERCHARGED SEARCH LOGIC
+  const filteredProducts = products.filter((p) => {
+    const query = searchQuery.toLowerCase();
+    return (
+      p.name.toLowerCase().includes(query) ||
+      p.specs.toLowerCase().includes(query) ||
+      p.description.toLowerCase().includes(query)
+    );
+  });
+
+  // THE FIX: If there is a search query, show all matches. If empty, show 4 featured.
+  const displayedProducts = searchQuery
+    ? filteredProducts
+    : filteredProducts.slice(0, 4);
 
   return (
     <div className="min-h-screen bg-[#030304] text-white font-body selection:bg-[#F7931A]/30">
@@ -114,7 +126,7 @@ export default function Storefront() {
             <Search className="absolute left-3 w-5 h-5 text-[#94A3B8] group-focus-within:text-[#F7931A] transition-colors z-10" />
             <Input
               type="text"
-              placeholder="Search for models, brands, or features..."
+              placeholder="Search for models, specs, or features..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               className="pl-10"
@@ -134,13 +146,14 @@ export default function Storefront() {
       </section>
 
       <section className="max-w-7xl mx-auto px-6 pb-24">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-          {products
-            .slice(0, 4)
-            .filter((p) =>
-              p.name.toLowerCase().includes(searchQuery.toLowerCase()),
-            )
-            .map((product) => (
+        {displayedProducts.length === 0 ? (
+          <div className="text-center text-[#94A3B8] font-mono py-12">
+            No devices matched your search for "{searchQuery}".
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {/* Maps over the dynamic array instead of a hardcoded slice */}
+            {displayedProducts.map((product) => (
               <Card
                 key={product.id}
                 interactive
@@ -195,21 +208,24 @@ export default function Storefront() {
                 </Button>
               </Card>
             ))}
-        </div>
+          </div>
+        )}
 
-        <div className="mt-16 flex justify-center">
-          <Link to="/products">
-            <Button
-              variant="outline"
-              className="px-8 border-white/20 hover:bg-white/5"
-            >
-              Show all products
-            </Button>
-          </Link>
-        </div>
+        {/* Hide the "Show all products" button if they are actively searching */}
+        {!searchQuery && (
+          <div className="mt-16 flex justify-center">
+            <Link to="/products">
+              <Button
+                variant="outline"
+                className="px-8 border-white/20 hover:bg-white/5"
+              >
+                Show all products
+              </Button>
+            </Link>
+          </div>
+        )}
       </section>
 
-      {/* PRODUCT DETAILS MODAL */}
       <Modal
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
@@ -253,7 +269,6 @@ export default function Storefront() {
                 variant="outline"
                 className="w-full gap-2"
                 onClick={() => {
-                  // Protect Add to Cart with Auth Check
                   if (checkAuthAndProceed()) {
                     addToCart(selectedProduct);
                     setSelectedProduct(null);
@@ -266,7 +281,6 @@ export default function Storefront() {
               <Button
                 className="w-full gap-2"
                 onClick={async () => {
-                  // Protect Buy Now with Auth Check
                   if (checkAuthAndProceed()) {
                     await addToCart(selectedProduct);
                     setSelectedProduct(null);
@@ -281,7 +295,6 @@ export default function Storefront() {
         )}
       </Modal>
 
-      {/* NEW: AUTHENTICATION REQUIRED MODAL */}
       <Modal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)}>
         <div className="text-center space-y-6 py-4">
           <div className="mx-auto w-16 h-16 bg-[#F7931A]/10 border border-[#F7931A]/20 rounded-full flex items-center justify-center">
