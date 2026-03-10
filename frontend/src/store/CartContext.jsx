@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import api from "../services/api"; // Using your configured API instance!
+import api from "../services/api";
 
 // Create the Context
 const CartContext = createContext();
@@ -8,7 +8,9 @@ const CartContext = createContext();
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
 
-  // FIXED: Now looking for the exact key your AuthContext uses!
+  // NEW: Loading state to prevent premature redirects
+  const [isCartLoading, setIsCartLoading] = useState(true);
+
   const getToken = () => localStorage.getItem("access_token");
 
   // Fetch the cart from Django
@@ -16,16 +18,19 @@ export function CartProvider({ children }) {
     const token = getToken();
     if (!token) {
       setCartItems([]);
+      setIsCartLoading(false);
       return;
     }
 
     try {
-      // Using your api instance means we don't need to type http://127... every time
+      setIsCartLoading(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const response = await api.get("cart/", config);
       setCartItems(response.data);
     } catch (error) {
       console.error("Error fetching cart from Django:", error);
+    } finally {
+      setIsCartLoading(false); // Data is fully loaded
     }
   };
 
@@ -43,13 +48,18 @@ export function CartProvider({ children }) {
     }
 
     try {
+      setIsCartLoading(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const payload = { product_id: product.id, quantity: 1 };
 
       await api.post("cart/", payload, config);
-      fetchCart(); // Instantly refresh the cart from the database
+
+      // CRITICAL FIX: The 'await' here forces the app to pause until the database
+      // returns the fresh cart data BEFORE moving on to the checkout redirect.
+      await fetchCart();
     } catch (error) {
       console.error("Error adding item to cart:", error);
+      setIsCartLoading(false);
     }
   };
 
@@ -59,11 +69,13 @@ export function CartProvider({ children }) {
     if (!token) return;
 
     try {
+      setIsCartLoading(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
       await api.delete(`cart/${cartItemId}/`, config);
-      fetchCart();
+      await fetchCart();
     } catch (error) {
       console.error("Error removing item:", error);
+      setIsCartLoading(false);
     }
   };
 
@@ -78,13 +90,15 @@ export function CartProvider({ children }) {
 
     const token = getToken();
     try {
+      setIsCartLoading(true);
       const config = { headers: { Authorization: `Bearer ${token}` } };
       const payload = { product_id: productId, quantity: delta };
 
       await api.post("cart/", payload, config);
-      fetchCart();
+      await fetchCart();
     } catch (error) {
       console.error("Error updating quantity:", error);
+      setIsCartLoading(false);
     }
   };
 
@@ -107,6 +121,7 @@ export function CartProvider({ children }) {
         clearCart,
         cartItemCount,
         fetchCart,
+        isCartLoading, // EXPORTED: So the Checkout page knows to wait
       }}
     >
       {children}
