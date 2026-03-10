@@ -14,13 +14,15 @@ import { Input } from "../components/ui/Input";
 import { Card } from "../components/ui/Card";
 import { Badge } from "../components/ui/Badge";
 import { Modal } from "../components/ui/Modal";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom"; // <-- Imported useNavigate here
 
 export default function Storefront() {
   const [products, setProducts] = useState([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedProduct, setSelectedProduct] = useState(null);
+
   const { addToCart } = useCart();
+  const navigate = useNavigate(); // <-- Initialized the navigation hook
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -41,7 +43,6 @@ export default function Storefront() {
     }).format(price);
   };
 
-  // NEW: Helper function to fix Django image URLs
   const getImageUrl = (imagePath) => {
     if (!imagePath) return "";
     return imagePath.startsWith("http")
@@ -136,7 +137,7 @@ export default function Storefront() {
                 <div className="w-full h-48 bg-gradient-to-br from-black/60 to-white/5 rounded-xl mb-6 flex items-center justify-center border border-white/5 relative overflow-hidden group-hover:border-[#F7931A]/30 transition-colors">
                   {product.image ? (
                     <img
-                      src={getImageUrl(product.image)} // APPLIED FIX HERE
+                      src={getImageUrl(product.image)}
                       alt={product.name}
                       className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-all duration-500 group-hover:scale-105"
                     />
@@ -203,7 +204,7 @@ export default function Storefront() {
               <div className="w-24 h-24 shrink-0 rounded-xl overflow-hidden bg-black/50 border border-white/10 flex items-center justify-center shadow-lg">
                 {selectedProduct.image ? (
                   <img
-                    src={getImageUrl(selectedProduct.image)} // APPLIED FIX HERE
+                    src={getImageUrl(selectedProduct.image)}
                     alt={selectedProduct.name}
                     className="w-full h-full object-cover"
                   />
@@ -242,7 +243,16 @@ export default function Storefront() {
               >
                 <ShoppingCart className="w-4 h-4" /> Add to Cart
               </Button>
-              <Button className="w-full gap-2">
+
+              {/* THE UPDATED BUY NOW BUTTON */}
+              <Button
+                className="w-full gap-2"
+                onClick={async () => {
+                  await addToCart(selectedProduct); // Add the item to the database cart
+                  setSelectedProduct(null); // Close the modal
+                  navigate("/checkout"); // Send them instantly to checkout
+                }}
+              >
                 <CreditCard className="w-4 h-4" /> Buy Now
               </Button>
             </div>
