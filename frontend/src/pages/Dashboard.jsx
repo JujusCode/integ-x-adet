@@ -14,6 +14,7 @@ import {
   CheckCircle,
   Truck,
   Clock,
+  Receipt, // <-- Added Receipt icon for the orders table
 } from "lucide-react";
 import {
   LineChart,
@@ -44,9 +45,11 @@ export default function Dashboard() {
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Inventory Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  // --- MODAL STATES ---
+  const [isModalOpen, setIsModalOpen] = useState(false); // For Inventory
+  const [selectedOrder, setSelectedOrder] = useState(null); // For Orders Receipt Modal
   const [editingId, setEditingId] = useState(null);
+
   const [formData, setFormData] = useState({
     name: "",
     price: "",
@@ -93,7 +96,6 @@ export default function Dashboard() {
     (p) => p.status === "Low Stock" || p.status === "Out of Stock",
   ).length;
 
-  // Format data for Recharts (Last 7 Days Revenue Mockup based on real orders)
   const revenueData = orders
     .slice(0, 7)
     .reverse()
@@ -114,7 +116,7 @@ export default function Dashboard() {
         { status: newStatus },
         config,
       );
-      fetchDashboardData(); // Refresh the data!
+      fetchDashboardData();
     } catch (error) {
       console.error("Error updating order status:", error);
       alert(
@@ -123,8 +125,12 @@ export default function Dashboard() {
     }
   };
 
+  const formatPrice = (priceStr) => {
+    return `₱${parseFloat(priceStr || 0).toLocaleString(undefined, { minimumFractionDigits: 2 })}`;
+  };
+
   // ==========================================
-  // INVENTORY LOGIC (Unchanged)
+  // INVENTORY LOGIC
   // ==========================================
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -247,10 +253,9 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* 1. OVERVIEW TAB (KPIs & Charts) */}
+        {/* 1. OVERVIEW TAB */}
         {activeTab === "overview" && (
           <div className="space-y-6 flex-col animate-in fade-in duration-500">
-            {/* KPI Row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <Card className="bg-gradient-to-br from-white/5 to-transparent border-white/10">
                 <CardContent className="p-6">
@@ -310,7 +315,6 @@ export default function Dashboard() {
               </Card>
             </div>
 
-            {/* Charts Row */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 pt-4">
               <Card className="border-white/10">
                 <CardHeader>
@@ -394,28 +398,40 @@ export default function Dashboard() {
                             ₱{parseFloat(order.total_amount).toLocaleString()}
                           </td>
                           <td className="p-4 text-right">
-                            {/* THE MAGIC STATUS DROPDOWN */}
-                            <select
-                              value={order.status}
-                              onChange={(e) =>
-                                handleStatusChange(order.id, e.target.value)
-                              }
-                              className={`bg-[#030304] border rounded px-3 py-1.5 text-xs font-mono font-bold outline-none cursor-pointer
-                                ${
-                                  order.status === "Pending"
-                                    ? "border-yellow-500/50 text-yellow-500"
-                                    : order.status === "Processing"
-                                      ? "border-blue-500/50 text-blue-500"
-                                      : order.status === "Shipped"
-                                        ? "border-[#F7931A]/50 text-[#F7931A]"
-                                        : "border-green-500/50 text-green-500"
-                                }`}
-                            >
-                              <option value="Pending">Pending</option>
-                              <option value="Processing">Processing</option>
-                              <option value="Shipped">Shipped</option>
-                              <option value="Delivered">Delivered</option>
-                            </select>
+                            <div className="flex items-center justify-end gap-3">
+                              <select
+                                value={order.status}
+                                onChange={(e) =>
+                                  handleStatusChange(order.id, e.target.value)
+                                }
+                                className={`bg-[#030304] border rounded px-3 py-1.5 text-xs font-mono font-bold outline-none cursor-pointer
+                                  ${
+                                    order.status === "Pending"
+                                      ? "border-yellow-500/50 text-yellow-500"
+                                      : order.status === "Processing"
+                                        ? "border-blue-500/50 text-blue-500"
+                                        : order.status === "Shipped"
+                                          ? "border-[#F7931A]/50 text-[#F7931A]"
+                                          : "border-green-500/50 text-green-500"
+                                  }`}
+                              >
+                                <option value="Pending">Pending</option>
+                                <option value="Processing">Processing</option>
+                                <option value="Shipped">Shipped</option>
+                                <option value="Delivered">Delivered</option>
+                              </select>
+
+                              {/* NEW: View Receipt Button */}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => setSelectedOrder(order)}
+                                className="border-white/10 hover:bg-white/10 px-2"
+                                title="View Details"
+                              >
+                                <Receipt className="w-4 h-4 text-[#94A3B8]" />
+                              </Button>
+                            </div>
                           </td>
                         </tr>
                       ))
@@ -427,7 +443,7 @@ export default function Dashboard() {
           </div>
         )}
 
-        {/* 3. INVENTORY TAB (Your original code perfectly preserved) */}
+        {/* 3. INVENTORY TAB */}
         {activeTab === "inventory" && (
           <div className="animate-in fade-in duration-500 space-y-4">
             <div className="flex justify-end">
@@ -532,7 +548,11 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Your original Inventory Modal (Preserved exactly as is) */}
+      {/* =========================================
+          MODALS
+      ========================================= */}
+
+      {/* INVENTORY MODAL */}
       <Modal isOpen={isModalOpen} onClose={closeModal}>
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="border-b border-white/10 pb-4">
@@ -631,7 +651,7 @@ export default function Dashboard() {
             <Button
               type="button"
               variant="outline"
-              className="w-full"
+              className="w-full border-white/10"
               onClick={closeModal}
             >
               Cancel
@@ -641,6 +661,96 @@ export default function Dashboard() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* ORDER DETAILS MODAL */}
+      <Modal isOpen={!!selectedOrder} onClose={() => setSelectedOrder(null)}>
+        {selectedOrder && (
+          <div className="space-y-6">
+            <div className="border-b border-white/10 pb-4 flex justify-between items-start">
+              <div>
+                <h2 className="font-heading text-2xl font-bold text-white flex items-center gap-2">
+                  <Receipt className="w-6 h-6 text-[#F7931A]" /> Order Details
+                </h2>
+                <p className="font-mono text-sm text-[#94A3B8] mt-1">
+                  #VLT-{selectedOrder.id.toString().padStart(6, "0")}
+                </p>
+              </div>
+              <div className="text-right">
+                <Badge
+                  variant={
+                    selectedOrder.status === "Pending" ? "warning" : "success"
+                  }
+                >
+                  {selectedOrder.status}
+                </Badge>
+                <p className="font-mono text-xs text-[#94A3B8] mt-2 flex items-center justify-end gap-1">
+                  <Clock className="w-3 h-3" />
+                  {new Date(selectedOrder.order_date).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white/5 rounded-lg p-4 border border-white/10 space-y-2">
+              <h3 className="font-mono text-xs text-[#94A3B8] uppercase tracking-wider flex items-center gap-2">
+                <LayoutDashboard className="w-4 h-4 text-[#FFD600]" /> Customer
+                & Shipping
+              </h3>
+              <p className="font-body text-white text-sm">
+                <strong>Email:</strong> {selectedOrder.user_email}
+              </p>
+              <p className="font-body text-white text-sm">
+                <strong>Address:</strong> {selectedOrder.shipping_address}
+              </p>
+            </div>
+
+            <div className="space-y-3 max-h-48 overflow-y-auto pr-2">
+              <h3 className="font-mono text-xs text-[#94A3B8] uppercase tracking-wider mb-2">
+                Items Purchased
+              </h3>
+              {selectedOrder.items?.map((item) => (
+                <div
+                  key={item.id}
+                  className="flex justify-between items-center text-sm font-body border-b border-white/5 pb-2"
+                >
+                  <div className="flex gap-3">
+                    <span className="font-mono text-[#94A3B8]">
+                      {item.quantity}x
+                    </span>
+                    <span className="text-white">{item.product_name}</span>
+                  </div>
+                  <span className="font-mono text-[#94A3B8]">
+                    {formatPrice(item.price_at_purchase)}
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <div className="border-t border-white/10 pt-4 flex flex-col gap-2">
+              <div className="flex justify-between items-center text-sm">
+                <span className="font-mono text-[#94A3B8]">Shipping Fee</span>
+                <span className="font-mono text-[#94A3B8]">
+                  {formatPrice(150.0)}
+                </span>
+              </div>
+              <div className="flex justify-between items-end">
+                <span className="font-body text-[#94A3B8] uppercase text-xs tracking-wider">
+                  Grand Total
+                </span>
+                <span className="text-3xl font-bold text-[#FFD600]">
+                  {formatPrice(selectedOrder.total_amount)}
+                </span>
+              </div>
+            </div>
+
+            <Button className="w-full" onClick={() => setSelectedOrder(null)}>
+              Close Details
+            </Button>
+          </div>
+        )}
       </Modal>
     </div>
   );
