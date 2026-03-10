@@ -5,6 +5,7 @@ import {
   Smartphone,
   LayoutDashboard,
   LogOut,
+  Lock, // <-- Imported the Lock icon for the new Auth modal
 } from "lucide-react";
 import { Button } from "../ui/Button";
 import { useCart } from "../../store/CartContext";
@@ -14,7 +15,10 @@ import { Modal } from "../ui/Modal";
 export function Navbar() {
   const { cartItemCount } = useCart();
   const { user, isAdmin, logout } = useAuth();
+
+  // Modal States
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false); // <-- NEW: State for Auth Modal
 
   const location = useLocation();
   const navigate = useNavigate();
@@ -129,9 +133,16 @@ export function Navbar() {
                 </Link>
               )}
 
+              {/* UPDATED CART LINK: Intercepts click if user is not logged in */}
               <Link
-                to="/cart"
-                className="relative group flex items-center justify-center w-11 h-11 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors"
+                to={user ? "/cart" : "#"}
+                onClick={(e) => {
+                  if (!user) {
+                    e.preventDefault(); // Stop them from navigating
+                    setShowAuthModal(true); // Show the login prompt instead
+                  }
+                }}
+                className="relative group flex items-center justify-center w-11 h-11 rounded-full border border-white/10 bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
               >
                 <ShoppingCart className="w-5 h-5 group-hover:text-[#F7931A] transition-colors" />
                 {cartItemCount > 0 && (
@@ -145,7 +156,11 @@ export function Navbar() {
         </nav>
       )}
 
-      {/* --- SHARED LOGOUT MODAL (Placed outside the <nav> for center positioning) --- */}
+      {/* =========================================
+          MODALS (Placed safely outside the layout)
+      ========================================= */}
+
+      {/* --- SHARED LOGOUT MODAL --- */}
       <Modal
         isOpen={isLogoutModalOpen}
         onClose={() => setIsLogoutModalOpen(false)}
@@ -176,6 +191,44 @@ export function Navbar() {
               onClick={handleLogoutConfirm}
             >
               Sign Out
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* --- NEW: AUTHENTICATION REQUIRED MODAL --- */}
+      <Modal isOpen={showAuthModal} onClose={() => setShowAuthModal(false)}>
+        <div className="text-center space-y-6 py-4">
+          <div className="mx-auto w-16 h-16 bg-[#F7931A]/10 border border-[#F7931A]/20 rounded-full flex items-center justify-center">
+            <Lock className="w-8 h-8 text-[#F7931A]" />
+          </div>
+
+          <div className="space-y-2">
+            <h2 className="font-heading text-2xl font-bold text-white">
+              Authentication Required
+            </h2>
+            <p className="font-body text-[#94A3B8]">
+              You need to be signed in to view your secure cart and complete
+              transactions.
+            </p>
+          </div>
+
+          <div className="flex gap-4 pt-4 border-t border-white/10">
+            <Button
+              variant="outline"
+              className="w-full border-white/10 hover:bg-white/5"
+              onClick={() => setShowAuthModal(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              className="w-full"
+              onClick={() => {
+                setShowAuthModal(false);
+                navigate("/login");
+              }}
+            >
+              Sign In
             </Button>
           </div>
         </div>
